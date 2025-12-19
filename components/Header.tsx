@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeTab, hasResult }) => 
             </svg>
           </div>
           <span className="text-xl font-extrabold text-[#1A202C] tracking-tight">
-            De Thuisbatterij Wijzer
+            Batterij Rendement Check
           </span>
         </div>
         

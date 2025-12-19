@@ -52,7 +52,7 @@ const Calculator: React.FC<CalculatorProps> = ({ onResult }) => {
         </svg>
       </div>
 
-      <h3 className="text-2xl font-black mb-8 text-gray-900 tracking-tight italic">Rendementsanalyse 2025 ⚡️</h3>
+      <h3 className="text-2xl font-black mb-8 text-gray-900 tracking-tight italic">Check je Besparing & Vraag Offertes aan</h3>
       
       <form onSubmit={handleCalculate} className="space-y-6">
         <div className="space-y-5">
@@ -110,7 +110,7 @@ const Calculator: React.FC<CalculatorProps> = ({ onResult }) => {
              </div>
           ) : (
             <>
-                <span>Ontdek mijn Rendement &rarr;</span>
+                <span>Ontvang mijn Rendements-Rapport & Offertes</span>
             </>
           )}
         </button>
