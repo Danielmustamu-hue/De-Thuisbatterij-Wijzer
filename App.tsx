@@ -43,58 +43,99 @@ const App: React.FC = () => {
   };
 
   const renderBlogContent = (content: string) => {
-    return content.split('\n').map((line, i) => {
-      if (line.startsWith('## ')) {
-        return <h2 key={i} className="text-3xl font-black mt-16 mb-8 text-gray-900 border-l-8 border-[#48BB78] pl-8 uppercase tracking-tighter leading-none italic">{line.replace('## ', '')}</h2>;
-      }
-      if (line.startsWith('### ')) {
-        return <h3 key={i} className="text-2xl font-bold mt-10 mb-6 text-gray-800 italic">{line.replace('### ', '')}</h3>;
-      }
-      if (line.startsWith('* ')) {
-        return <li key={i} className="ml-8 mb-3 text-gray-600 list-disc font-medium text-lg leading-relaxed">{line.replace('* ', '')}</li>;
-      }
-      
-      // Technical Table Component Placeholder
-      if (line.includes('[ComparisonTable]')) {
-        return <BrandComparisonTable key={i} />;
+    if (!content) return null;
+
+    // Improved regex to capture [ComparisonTable] OR entire multi-line markdown table blocks
+    // This prevents splitting individual pipe segments which caused the undefined.split crash
+    const blocks = content.split(/(\[ComparisonTable\]|(?:\n|^)(?:\|.*\|(?:\n|$|(?=$)))+)/);
+
+    return blocks.map((block, blockIdx) => {
+      if (!block || !block.trim()) return null;
+
+      // 1. Check for specific table components
+      if (block === '[ComparisonTable]') {
+        return <BrandComparisonTable key={blockIdx} />;
       }
 
-      // Affiliate Placeholder Handling
-      if (line.includes('[Halt:')) {
+      // 2. Check for Markdown-style tables
+      const trimmedBlock = block.trim();
+      if (trimmedBlock.startsWith('|')) {
+        const rows = trimmedBlock.split('\n').filter(r => r.trim() && !r.includes('| :---'));
+        
+        // Safety check to prevent crashing on malformed tables or separator-only blocks
+        if (rows.length === 0) return null;
+
+        const headerRow = rows[0] || "";
+        const headerCells = headerRow.split('|').filter(c => c.trim());
+
         return (
-          <div key={i} className="my-8 p-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-center">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Advertentie / Affiliate Ruimte</p>
-            <p className="text-sm italic text-gray-500 mt-2">Hier wordt binnenkort een relevante aanbieding getoond.</p>
+          <div key={blockIdx} className="my-16 overflow-x-auto rounded-[3rem] border border-gray-100 shadow-xl">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead className="bg-[#1A202C] text-white">
+                <tr>
+                  {headerCells.map((cell, i) => (
+                    <th key={i} className="p-8 text-[10px] font-black uppercase tracking-widest">{cell.trim()}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {rows.slice(1).map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    {row.split('|').filter(c => c.trim()).map((cell, j) => (
+                      <td key={j} className={`p-8 text-lg font-medium ${j === 0 ? 'font-black italic uppercase text-gray-900 border-r border-gray-50' : 'text-gray-600'}`}>
+                        {cell.trim()}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
       }
 
-      // Conversion CTA Handling
-      if (line.startsWith('[') && (line.includes('Vergelijk') || line.includes('Bespaar'))) {
-        return (
-          <div key={i} className="my-14 p-12 bg-gradient-to-br from-[#48BB78]/10 to-transparent border-2 border-dashed border-[#48BB78]/40 rounded-[3.5rem] text-center shadow-inner">
-            <p className="text-[10px] font-black text-[#48BB78] uppercase tracking-[0.3em] mb-6">Actie Vereist</p>
-            <h4 className="text-xl font-bold mb-8 text-gray-800">{line.replace('[', '').replace(']', '')}</h4>
-            <button onClick={() => navigateTo('home', 'calculator-anchor')} className="bg-[#48BB78] text-white px-12 py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs hover:shadow-2xl hover:bg-black transition-all transform hover:scale-105 active:scale-95">
-              Start Gratis Offerte-check &rarr;
-            </button>
-          </div>
-        );
-      }
-      
-      if (line.includes('Rendementscalculator')) {
+      // 3. Process normal text lines
+      return block.split('\n').map((line, i) => {
+        if (!line.trim() && i > 0) return <div key={`${blockIdx}-${i}`} className="h-6" />;
+        
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('## ')) {
+          return <h2 key={`${blockIdx}-${i}`} className="text-3xl font-black mt-16 mb-8 text-gray-900 border-l-8 border-[#48BB78] pl-8 uppercase tracking-tighter leading-none italic">{trimmedLine.replace('## ', '')}</h2>;
+        }
+        if (trimmedLine.startsWith('### ')) {
+          return <h3 key={`${blockIdx}-${i}`} className="text-2xl font-bold mt-10 mb-6 text-gray-800 italic">{trimmedLine.replace('### ', '')}</h3>;
+        }
+        if (trimmedLine.startsWith('* ')) {
+          return <li key={`${blockIdx}-${i}`} className="ml-8 mb-3 text-gray-600 list-disc font-medium text-lg leading-relaxed">{trimmedLine.replace('* ', '')}</li>;
+        }
+        
+        // Affiliate Placeholder
+        if (line.includes('[Halt:')) {
+          return (
+            <div key={`${blockIdx}-${i}`} className="my-8 p-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-center">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Advertentie / Affiliate Ruimte</p>
+              <p className="text-sm italic text-gray-500 mt-2">Hier wordt binnenkort een relevante aanbieding getoond.</p>
+            </div>
+          );
+        }
+
+        // Calculator link parsing
+        if (line.includes('Rendementscalculator')) {
           const parts = line.split('Rendementscalculator');
           return (
-              <p key={i} className="mb-8 text-gray-600 leading-relaxed text-xl font-normal">
-                  {parts[0]}
-                  <button onClick={() => navigateTo('home', 'calculator-anchor')} className="text-[#48BB78] font-black underline decoration-4 underline-offset-4 hover:text-black transition-colors">Rendementscalculator</button>
-                  {parts[1]}
-              </p>
+            <p key={`${blockIdx}-${i}`} className="mb-8 text-gray-600 leading-relaxed text-xl font-normal">
+              {parts[0]}
+              <button onClick={() => navigateTo('home', 'calculator-anchor')} className="text-[#48BB78] font-black underline decoration-4 underline-offset-4 hover:text-black transition-colors">Rendementscalculator</button>
+              {parts.length > 1 ? parts.slice(1).join('Rendementscalculator') : ''}
+            </p>
           );
-      }
+        }
 
-      if (line.trim().length === 0) return <div key={i} className="h-6" />;
-      return <p key={i} className="mb-8 text-gray-600 leading-relaxed text-xl font-normal" dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>') }}></p>;
+        if (!trimmedLine) return null;
+        
+        // Default text rendering
+        return <p key={`${blockIdx}-${i}`} className="mb-8 text-gray-600 leading-relaxed text-xl font-normal" dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>') }}></p>;
+      });
     });
   };
 
